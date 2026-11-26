@@ -10,7 +10,7 @@ Modern AI pipelines (such as RAG, semantic search, and image retrieval) represen
 
 * **Contiguous 64-byte aligned storage:** Stores all $N \times D$ `float32` values in a single flat buffer using a 64-byte aligned allocator instead of `std::vector<std::vector<float>>`, reducing heap fragmentation, pointer chasing, and cache/TLB misses.
 * **Cross-platform SIMD kernels:** Computes $L_2^2$ distances using AVX2 + FMA (8 `float32` lanes) on x86_64 and ARM NEON (4 `float32` lanes) on ARM, with a scalar tail loop for remaining elements.
-* **Bounded max-heap top-$K$ selection:** Streams `(distance_sq, id)` candidates through a size-$K$ max-heap during the scan, achieving $O(N \log K)$ selection time and $O(K)$ extra memory instead of sorting all $N$ distances.
+* **Bounded max-heap top- $K$ selection:** Streams `(distance_sq, id)` candidates through a size-$K$ max-heap during the scan, achieving $O(N \log K)$ selection time and $O(K)$ extra memory instead of sorting all $N$ distances.
 
 ## Scope & Non-Goals
 
