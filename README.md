@@ -1,10 +1,27 @@
-# mini-faiss
+# Mini-FAISS
 
-A lightweight, custom-build vector database search engine.
+A lightweight, in-memory exact k-Nearest Neighbors (k-NN) vector search engine built in C++20.
 
-### What does it do? 
-**Stores High-Dimensional Vectors**: Modern AI (LLMs, RAG systems, and image search) converts text or images into dense arrays of numbers called *embeddings* (e.g., 768 floating-point numbers long). This engine stores them in memory.
+## Overview
 
-**Performs Similarity Search (Nearest Neighbor Search)**: When you pass a query vector, it scans all stored vectors, computes the mathematical distance (Euclidean/L2 distance) between your query and every single stored vector, and returns the top- $k$ closest matches.
-* **SIMD Acceleration (Single Instruction, Multiple Data)**: Normally, a computer CPU computes distance sequentially: $(a[0] - b[0])^2$, then $(a[1] - b[1])^2$, one-by-one.
-* SIMD instructions (like AVX2 or AVX-512 on Intel/AMD chips, or NEON on ARM chips) allow the CPU to perform math on *multiple floats simultaneously* using wide hardware registers (e.g., processing 8 or 16 floats in a single clock cycle). This speeds up vector similarity search by several multiples, which is crucial when scaling to millions of embeddings.
+Modern AI pipelines (such as RAG, semantic search, and image retrieval) represent text, images, and audio as dense floating-point vectors (embeddings), commonly 768 dimensions long. `mini-faiss` stores vectors in memory and performs exact brute-force squared Euclidean ($L_2^2$) distance search to return the `top-k` closest matches for a query vector.
+
+## Key Design Choices
+
+* **Contiguous 64-byte aligned storage:** Stores all $N \times D$ `float32` values in a single flat buffer using a 64-byte aligned allocator instead of `std::vector<std::vector<float>>`, reducing heap fragmentation, pointer chasing, and cache/TLB misses.
+* **Cross-platform SIMD kernels:** Computes $L_2^2$ distances using AVX2 + FMA (8 `float32` lanes) on x86_64 and ARM NEON (4 `float32` lanes) on ARM, with a scalar tail loop for remaining elements.
+* **Bounded max-heap top-$K$ selection:** Streams `(distance_sq, id)` candidates through a size-$K$ max-heap during the scan, achieving $O(N \log K)$ selection time and $O(K)$ extra memory instead of sorting all $N$ distances.
+
+## Scope & Non-Goals
+
+* **In scope:** Single-node, in-memory exact k-NN search and latency benchmarking.
+* **Out of scope (for now):** Distributed sharding, disk persistence, deletes/updates, and approximate indexes (HNSW, IVF, quantization).
+
+## Build and Run
+
+Requires CMake 3.20+ and a C++20 compiler (`g++`, `clang++`, or MSVC).
+
+```bash
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j
+./build/mini_faiss_bench
