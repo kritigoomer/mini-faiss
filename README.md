@@ -25,3 +25,11 @@ Requires CMake 3.20+ and a C++20 compiler (`g++`, `clang++`, or MSVC).
 cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j
 ./build/mini_faiss_bench
+```
+
+### Benchmarking Without Scalar Auto-Vectorization
+Compilers under -O3 may auto-vectorize the scalar baseline loop. To compare against an un-vectorized scalar baseline on x86_64 with AVX2/FMA:
+```bash
+g++ -std=c++20 -O3 -fno-tree-vectorize -mavx2 -mfma -Iinclude src/knn_index.cpp src/main.cpp -o build/bench_no_autovec
+./build/bench_no_autovec
+```
