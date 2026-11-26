@@ -33,3 +33,12 @@ Compilers under -O3 may auto-vectorize the scalar baseline loop. To compare agai
 g++ -std=c++20 -O3 -fno-tree-vectorize -mavx2 -mfma -Iinclude src/knn_index.cpp src/main.cpp -o build/bench_no_autovec
 ./build/bench_no_autovec
 ```
+
+## Sample Benchmark (Intel Core i7-10710U) 
+Measured on a Dell XPS 13 with an Intel Core i7-10710U (6 cores / 12 threads, 12 MiB L3 cache, single NUMA node) over 100,000 vectors × 768 dimensions (float32, 293.0 MiB / ~307.2 MB, top-k = 10, 50 queries):
+Build / Comparison | Scalar Avg Latency | SIMD + Heap Avg Latency | Measured Speedup |
+| -- | -- | -- | -- |
+| -O3 -fno-tree-vectorize (bench_no_autovec) | 151.743 ms | 35.167 ms | 4.315x |
+| -O3 (mini_faiss_bench) | 140.785 ms | 34.496 ms | 4.081x |
+
+Because the 293.0 MiB working set is much larger than the 12 MiB L3 cache, queries stream across DRAM, where memory bandwidth and mobile power/thermal limits cap speedup below the theoretical 8-lane AVX2 ceiling.
