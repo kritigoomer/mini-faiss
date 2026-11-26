@@ -1,17 +1,31 @@
 cmake_minimum_required(VERSION 3.20)
-project(MiniFaiss CXX)
+project(mini_faiss LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -O3 -pthread")
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-include_directories(include)
-
-add_library(vector_engine 
-	src/main.cpp
-	src/index.cpp
+add_library(mini_faiss_lib STATIC
+    src/knn_index.cpp
 )
 
-add_executable(mini_faiss src/main.cpp)
+target_include_directories(mini_faiss_lib PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
 
-target_link_libraries(mini_faiss PRIVATE vector_engine)
+# Enable high optimization and native SIMD features where supported
+if(MSVC)
+    target_compile_options(mini_faiss_lib PRIVATE /O2 /arch:AVX2)
+else()
+    target_compile_options(mini_faiss_lib PRIVATE -O3)
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64")
+        include(CheckCXXCompilerFlag)
+        check_cxx_compiler_flag("-mavx2 -mfma" HAS_AVX2_FMA)
+        if(HAS_AVX2_FMA)
+            target_compile_options(mini_faiss_lib PRIVATE -mavx2 -mfma)
+        endif()
+    endif()
+endif()
+
+add_executable(mini_faiss_bench src/main.cpp)
+target_link_libraries(mini_faiss_bench PRIVATE mini_faiss_lib)
